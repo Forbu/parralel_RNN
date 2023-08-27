@@ -65,9 +65,6 @@ class LayerParallelRNN(nn.Module):
         # Cumsum layer
         output = torch.cumsum(output, dim=1)
 
-        # as the temporal dimension is often from 0 to T-1, we have to inverse the temporal dimension
-        output = torch.flip(output, dims=[1])
-
         # we can add the previous hidden state to the output
         if hidden is not None:
             # check the dimension of the hidden state

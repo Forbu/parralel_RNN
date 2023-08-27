@@ -28,7 +28,8 @@ class ParallelRNN(nn.Module):
 
         # Embedding layer
         if self.use_embedding_temporal:
-            self.embedding = nn.Parameter(torch.randn(nb_temporal, dim_embedding))
+            self.embedding = nn.Parameter(
+                torch.randn(nb_temporal, dim_embedding))
             self.all_dim_input = dim_input + dim_embedding
         else:
             self.all_dim_input = dim_input
@@ -59,13 +60,16 @@ class ParallelRNN(nn.Module):
         if self.use_embedding_temporal:
             input_temporal = torch.cat(
                 (input_temporal, self.embedding.expand(batch_size, seq_len, self.dim_embedding)), dim=2)
-            
+
         # adding encoder layer to preprocess the input
         input_temporal = self.encoder(input_temporal)
 
+        init_temporal = input_temporal.copy()
+
         # Layer parallel RNN layers
         for i in range(self.nb_layers):
-            input_temporal = self.rnn_layers[i](input_temporal, hidden)
+            input_temporal = self.rnn_layers[i](input_temporal, hidden) + \
+                init_temporal  # residual connection
 
         # Output layer
         output = self.output_layer(input_temporal)
