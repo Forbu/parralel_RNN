@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "parralel-rnn"
+version = "0.1.0"
+description = "Tools to create parallel rnn"
+authors = ["Adrien B <forbu14@gmail.com>"]
+license = "Apache 2,0"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+torch = "^2.0.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
