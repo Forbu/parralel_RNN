@@ -8,6 +8,7 @@ Basicly the idea is that we have a MLP combine with a CUMSUM layer.
 import torch
 import torch.nn as nn
 
+import torch.nn.functional as F
 
 class LayerParallelRNN(nn.Module):
     """
@@ -58,9 +59,13 @@ class LayerParallelRNN(nn.Module):
         # MLP layer
         output = self.mlp(input_temporal)
 
-        # Attenuation factor
-        attenuation = self.attenuation.expand(batch_size, self.dim_hidden)
-        output = output * attenuation
+        # Attenuation factor modification 
+        # attenuation is currently a vector of size [1, dim_hidden]
+        # we need to expand it to [1, 1, dim_hidden]
+        # so that we can multiply it with the output
+        attenuation = F.sigmoid(self.attenuation.unsqueeze(0))
+
+        output = output #* attenuation
 
         # Cumsum layer
         output = torch.cumsum(output, dim=1)

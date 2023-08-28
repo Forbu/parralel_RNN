@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "parralel-rnn"
+name = "parallel-rnn"
 version = "0.1.0"
 description = "Tools to create parallel rnn"
 authors = ["Adrien B <forbu14@gmail.com>"]
