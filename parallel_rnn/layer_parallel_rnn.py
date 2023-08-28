@@ -10,6 +10,7 @@ import torch.nn as nn
 
 import torch.nn.functional as F
 
+
 class LayerParallelRNN(nn.Module):
     """
     This is a simple RNN-like layer that can be used as a building block for more complex models.
@@ -59,13 +60,10 @@ class LayerParallelRNN(nn.Module):
         # MLP layer
         output = self.mlp(input_temporal)
 
-        # Attenuation factor modification 
-        # attenuation is currently a vector of size [1, dim_hidden]
-        # we need to expand it to [1, 1, dim_hidden]
-        # so that we can multiply it with the output
+        # Attenuation factor modification
         attenuation = F.sigmoid(self.attenuation.unsqueeze(0))
 
-        output = output #* attenuation
+        output = output  # * attenuation
 
         # Cumsum layer
         output = torch.cumsum(output, dim=1)
@@ -78,3 +76,55 @@ class LayerParallelRNN(nn.Module):
             output = output + hidden.unsqueeze(1)
 
         return output
+
+
+def decay_cumsum(input_temporal, decay):
+    """
+    Function implementing the decay cumsum layer.
+
+    Args:
+        input_temporal: input tensor with shape [batch_size, seq_len, dim_input]
+        decay: decay factor with shape [dim_input]
+
+    Returns:
+        output: output tensor with shape [batch_size, seq_len, dim_input]
+
+    The idea is that we have a cumsum layer with a decay factor.
+    basicly if we have a temporal input like this:
+    [x1, x2, x3, x4, x5]
+    the output will be:
+    [x1, x1*decay + x2, x1*decay^2 + x2*decay + x3, x1*decay^3 + x2*decay^2 + x3*decay + x4, x1*decay^4 + x2*decay^3 + x3*decay^2 + x4*decay + x5]
+    """
+    # first compute the matrix
+    # Dnm =
+    #   γ ** (n − m), n ≥ m
+    #   0, n < m
+
+    # first compute the matrix n - m
+    D = torch.arange(input_temporal.shape[1]).unsqueeze(
+        0) - torch.arange(input_temporal.shape[1]).unsqueeze(1)
+
+    # then compute the decay factor
+    list_D = []
+
+    for i in range(input_temporal.shape[2]):
+        list_D.append(torch.triu(decay[i] ** D).unsqueeze(-1))
+
+    D = torch.cat(list_D, dim=-1)
+
+
+    # add a dimension to the input : [batch_size, seq_len, 1, dim_input]
+    input_temporal = input_temporal.unsqueeze(-2)
+
+    # we repeat the input to match the dimension of the matrix
+    input_temporal = input_temporal.repeat(1, 1, input_temporal.shape[1], 1)
+
+    # we multiply the input by the matrix
+    output = input_temporal * D.unsqueeze(0)
+
+
+    # we sum the output
+    output = torch.sum(output, dim=1)
+
+
+    return output
