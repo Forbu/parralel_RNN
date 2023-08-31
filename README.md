@@ -6,3 +6,4 @@ The basic idea is to use a cumsum layer as the layer to represent the temporal d
 
 ![images/imagesrnn.png](images/imagesrnn.png)
 
+The key idea is to increase greatly the neural network speed
